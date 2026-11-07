@@ -1,7 +1,7 @@
 """RUN THE WHOLE PIPELINE with one command:   python -m pipeline.run
 
 Order of stages (each one is logged to ops.pipeline_runs):
-  ingest -> transform -> gold -> reconcile -> retention
+  ingest -> transform -> gold -> reconcile -> documents -> retention
 
 If any stage fails, the run stops, the failure is logged, and the command exits with code 1
 so a scheduler (or CI) can tell that something went wrong.
@@ -18,6 +18,7 @@ from .observability import RunLogger
 from .reconcile import ReconciliationError, run_checks, save_results
 from .retention import apply_retention
 from .transform import build_silver_and_quarantine
+from .unstructured import ingest_documents
 
 
 def count(con, table):
@@ -53,6 +54,9 @@ def run(as_of=None):
             if failed:
                 raise ReconciliationError("checks failed: " + "; ".join(failed))
             s.rows = len(results)
+
+        with log.stage("documents") as s:
+            s.rows = ingest_documents(con)["chunks"]          # chunks written (0 if nothing changed)
 
         with log.stage("retention") as s:
             s.rows = apply_retention(con)          # rows purged
