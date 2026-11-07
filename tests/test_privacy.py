@@ -8,6 +8,8 @@ from pipeline.privacy import redact_pii
     ("call +254712345678", "call [PHONE]"),
     ("mail jane@example.com", "mail [EMAIL]"),
     ("ref 0123456789012 done", "ref [NUMBER] done"),
+    ("please confirm your ID No 23456789 today", "please confirm your [ID] today"),
+    ("paid 23456789 shillings", "paid 23456789 shillings"),          # an unlabelled number is not an ID
     ("CARD payment Naivas 2500 KES", "CARD payment Naivas 2500 KES"),   # nothing personal: unchanged
     (None, None),
 ])

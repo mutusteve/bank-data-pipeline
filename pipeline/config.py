@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
+DOCS_DIR = RAW_DIR / "docs"
 PROCESSED_DIR = ROOT / "data" / "processed"
 WAREHOUSE = PROCESSED_DIR / "warehouse.duckdb"
 
@@ -20,3 +21,8 @@ MAX_QUARANTINE_PCT = 10.0
 
 # Storage limitation: the raw layer holds personal data, so it is only kept for this many days
 BRONZE_RETENTION_DAYS = 90
+
+# Documents for GenAI: how to cut text into pieces and how long each vector is
+CHUNK_WORDS = 50        # words per chunk (small here because our sample documents are short)
+CHUNK_OVERLAP = 10      # words shared between neighbouring chunks, so a sentence cut in half is not lost
+EMBEDDING_DIM = 256     # numbers per vector
