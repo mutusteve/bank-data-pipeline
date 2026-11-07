@@ -2,3 +2,5 @@ duckdb
 pandas
 ipykernel
 pytest
+ruff
+numpy

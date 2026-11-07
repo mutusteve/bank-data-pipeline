@@ -19,7 +19,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install what the pipeline and tests need
-        run: pip install duckdb pytest ruff
+        run: pip install duckdb numpy pytest ruff
 
       - name: Lint (real errors only, such as undefined names and unused imports)
         run: ruff check .
