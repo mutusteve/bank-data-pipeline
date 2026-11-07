@@ -1,0 +1,36 @@
+name: ci
+
+# Runs on every push to main and on every pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install what the pipeline and tests need
+        run: pip install duckdb pytest ruff
+
+      - name: Lint (real errors only, such as undefined names and unused imports)
+        run: ruff check .
+
+      - name: Run the automated tests
+        run: python -m pytest -q
+
+      - name: Generate the sample data
+        run: |
+          python scripts/generate_data.py
+          python scripts/generate_docs.py
+
+      - name: Run the whole pipeline end to end
+        run: python -m pipeline.run
