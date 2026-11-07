@@ -31,6 +31,9 @@ def redact_pii(text):
 
 def register_privacy_functions(con):
     """Make redact_pii() available inside SQL queries on this connection."""
+    # DuckDB refuses to register a function while an earlier query's result is only half-read
+    # (e.g. after .fetchone()). Running one tiny query to the end clears it.
+    con.execute("select 1").fetchall()
     try:
         con.remove_function("redact_pii")     # safe to call more than once
     except Exception:                         # not registered yet

@@ -16,7 +16,7 @@ from .privacy import register_privacy_functions
 from .quality import DataQualityError, build_rules, build_staging, reject_reason_sql
 
 
-def build_silver_and_quarantine(con, as_of):
+def build_silver_and_quarantine(con, as_of, max_quarantine_pct=MAX_QUARANTINE_PCT):
     register_privacy_functions(con)   # makes redact_pii() usable in the SQL below
     build_staging(con)
     rules = build_rules(as_of)
@@ -30,9 +30,9 @@ def build_silver_and_quarantine(con, as_of):
     total, rejected = con.execute(
         "select count(*), count(*) filter (where reject_reason is not null) from stg_flagged").fetchone()
     pct = rejected / total * 100 if total else 0.0
-    if pct > MAX_QUARANTINE_PCT:
+    if pct > max_quarantine_pct:
         raise DataQualityError(f"{rejected} of {total} rows ({pct:.1f}%) failed validation; "
-                               f"limit is {MAX_QUARANTINE_PCT}%. Nothing was published.")
+                               f"limit is {max_quarantine_pct}%. Nothing was published.")
 
     # Standardise merchant names to their most common spelling, so 'naivas' and 'Naivas' become one merchant.
     con.execute("""
