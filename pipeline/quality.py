@@ -15,6 +15,8 @@ import duckdb
 from .config import ALLOWED_CHANNELS, ALLOWED_CURRENCIES, ALLOWED_DIRECTIONS, WAREHOUSE
 
 
+class DataQualityError(RuntimeError):
+    """Raised when a batch is too bad to publish."""
 @dataclass(frozen=True)
 class Rule:
     name: str
@@ -80,7 +82,7 @@ def count_failures(con, rules):
 
 def main():
     as_of = datetime.now()
-    con = duckdb.connect()            # in-memory: nothing is written to disk
+    con = duckdb.connect(str(WAREHOUSE))           # in-memory: nothing is written to disk
     build_staging(con)
     rules = build_rules(as_of)
 

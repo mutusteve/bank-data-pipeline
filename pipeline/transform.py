@@ -10,9 +10,8 @@ Run:   python -m pipeline.transform
 from datetime import datetime
 
 import duckdb
-
-from .config import WAREHOUSE
-from .quality import build_rules, build_staging, reject_reason_sql
+from .config import MAX_QUARANTINE_PCT, WAREHOUSE
+from .quality import DataQualityError, build_rules, build_staging, reject_reason_sql
 
 
 def build_silver_and_quarantine(con, as_of):
@@ -23,6 +22,16 @@ def build_silver_and_quarantine(con, as_of):
     con.execute(f"create or replace temp table stg_flagged as "
                 f"select *, {reject_reason_sql(rules)} as reject_reason from stg_txn")
 
+
+    # Safety stop: if far too many rows fail, the SOURCE is probably broken. Stop BEFORE publishing anything,
+    # so consumers keep the last good data instead of receiving a bad batch.
+    total, rejected = con.execute(
+        "select count(*), count(*) filter (where reject_reason is not null) from stg_flagged").fetchone()
+    pct = rejected / total * 100 if total else 0.0
+    if pct > MAX_QUARANTINE_PCT:
+        raise DataQualityError(f"{rejected} of {total} rows ({pct:.1f}%) failed validation; "
+                               f"limit is {MAX_QUARANTINE_PCT}%. Nothing was published.")
+    
     # Standardise merchant names to their most common spelling, so 'naivas' and 'Naivas' become one merchant.
     con.execute("""
         create or replace temp table merchant_lookup as

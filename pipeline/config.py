@@ -14,3 +14,6 @@ WAREHOUSE = PROCESSED_DIR / "warehouse.duckdb"
 ALLOWED_CURRENCIES = ("KES", "USD", "EUR", "UGX", "TZS")
 ALLOWED_CHANNELS = ("MPESA", "ATM", "BRANCH", "CARD", "ONLINE")
 ALLOWED_DIRECTIONS = ("DR", "CR")   # DR = debit (money out), CR = credit (money in)
+
+# Safety stop: if more than this % of a batch is rejected, something is wrong upstream - do not publish
+MAX_QUARANTINE_PCT = 10.0
