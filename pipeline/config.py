@@ -17,3 +17,6 @@ ALLOWED_DIRECTIONS = ("DR", "CR")   # DR = debit (money out), CR = credit (money
 
 # Safety stop: if more than this % of a batch is rejected, something is wrong upstream - do not publish
 MAX_QUARANTINE_PCT = 10.0
+
+# Storage limitation: the raw layer holds personal data, so it is only kept for this many days
+BRONZE_RETENTION_DAYS = 90
