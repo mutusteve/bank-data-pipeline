@@ -12,7 +12,7 @@ from datetime import datetime
 
 import duckdb
 
-from .config import ALLOWED_CHANNELS, ALLOWED_CURRENCIES, ALLOWED_DIRECTIONS, RAW_DIR
+from .config import ALLOWED_CHANNELS, ALLOWED_CURRENCIES, ALLOWED_DIRECTIONS, WAREHOUSE
 
 
 @dataclass(frozen=True)
@@ -46,8 +46,8 @@ def build_rules(as_of: datetime):
     ]
 
 
-def build_staging(con, raw_dir=RAW_DIR):
-    """Read the raw CSVs as text and add tidy helper columns (suffix _n / _t) next to the raw ones.
+def build_staging(con):
+    """Read the BRONZE tables and add tidy helper columns (suffix _n / _t) next to the raw ones.
 
     Nothing is deleted or overwritten: the raw columns stay exactly as received.
     Trimming and upper-casing happens here, so ' mpesa ' is fixed rather than rejected.
@@ -63,12 +63,15 @@ def build_staging(con, raw_dir=RAW_DIR):
                upper(trim(t.direction))                    as direction_n,
                row_number() over (partition by nullif(trim(t.txn_id), '') order by t.row_num) as dup_rank,
                a.account_id is not null                    as account_exists
-        from (select *, row_number() over () as row_num
-              from read_csv(?, header=true, all_varchar=true)) t
-        left join read_csv(?, header=true, all_varchar=true) a
-               on a.account_id = trim(t.account_id)
-    """, [str(raw_dir / "transactions.csv"), str(raw_dir / "accounts.csv")])
+        from bronze.transactions t
+        left join bronze.accounts a on a.account_id = trim(t.account_id)
+    """)
 
+
+def reject_reason_sql(rules):
+    """A CASE expression giving each failing row its FIRST failing rule as the reason (NULL = clean row)."""
+    whens = " ".join(f"when {r.condition} then '{r.name}'" for r in rules)
+    return f"case {whens} end"
 
 def count_failures(con, rules):
     """How many rows break each rule? (A row that breaks two rules is counted under both.)"""
